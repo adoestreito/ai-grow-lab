@@ -2,9 +2,6 @@
 
 A small **home hydroponics lab stack**: an **ESP32-CAM** serves a live MJPEG stream and still captures, while a **Python web app** (FastAPI) saves snapshots on a schedule, proxies the stream for remote access (e.g. Tailscale), and runs **vision + chat** through **Ollama** or any **OpenAI-compatible** API (e.g. LM Studio). The UI is a cozy Stardew-inspired “farm shed” with a photo gallery and timelapse player.
 
-Optional **pod layout reference** (drop-in for richer AI prompts):
-
-![Annotated pod map example](diary-cam-server/grow_pod_reference.png)
 
 ---
 
