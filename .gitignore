@@ -1,0 +1,31 @@
+# Python
+**/.venv/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Local diary data (your grow photos & AI journals stay private)
+Diary/Photos/*
+!Diary/Photos/.gitkeep
+Diary/Journal/*
+!Diary/Journal/.gitkeep
+
+# Server config (paths, camera URL — may be under $HOME too)
+.diary-cam-config.json
+**/Diary/.diary-cam-config.json
+
+# ESP32 — real Wi-Fi credentials (copy from secrets.h.example)
+ESP32-BlindingLights-Camera/secrets.h
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Env
+.env
+.env.local

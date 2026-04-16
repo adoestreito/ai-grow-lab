@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diary Cam — Gallery &amp; timelapse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #3d2914;
+      --ink-soft: #5c4330;
+      --parchment: #f4e4bc;
+      --parchment-dark: #e5d4a8;
+      --wood: #8b5a3c;
+      --wood-dark: #5c3d2e;
+      --wood-light: #c49a6c;
+      --sky-top: #9fd3e8;
+      --sky-mid: #c8e8f5;
+      --grass: #7cb342;
+      --grass-dark: #558b2f;
+      --gold: #d4a017;
+      --gold-light: #f0d060;
+      --danger: #b94a48;
+      --success: #6a9e3a;
+      --pixel-shadow: 2px 2px 0 rgba(61, 41, 20, 0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "VT323", ui-monospace, monospace;
+      font-size: 1.35rem;
+      color: var(--ink);
+      line-height: 1.35;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 42%, #e8f2d8 72%, #a8c978 100%);
+      background-attachment: fixed;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 2.5rem;
+    }
+    .farm-header { text-align: center; margin-bottom: 1rem; }
+    .farm-header h1 {
+      font-size: 2.5rem;
+      font-weight: 400;
+      margin: 0;
+      color: var(--wood-dark);
+    }
+    .site-nav {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+    .site-nav a {
+      display: inline-block;
+      padding: 0.35rem 1rem;
+      background: var(--parchment);
+      border: 3px solid var(--wood-dark);
+      box-shadow: var(--pixel-shadow);
+      color: var(--wood-dark);
+      text-decoration: none;
+      font-size: 1.2rem;
+    }
+    .site-nav a:hover { filter: brightness(1.06); }
+    .panel {
+      background: linear-gradient(145deg, var(--parchment) 0%, var(--parchment-dark) 100%);
+      border: 4px solid var(--wood-dark);
+      padding: 1rem 1.1rem 1.15rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 4px 4px 0 var(--wood-dark), inset 0 1px 0 rgba(255, 250, 235, 0.8);
+    }
+    .panel h2 {
+      font-size: 1.35rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      text-shadow: 1px 1px 0 var(--wood-dark);
+      margin: 0 0 0.85rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 3px dashed rgba(92, 61, 46, 0.35);
+    }
+    .hint { font-size: 1rem; color: var(--ink-soft); margin: 0 0 0.75rem; }
+    .timelapse-stage {
+      position: relative;
+      background: #2a1810;
+      border: 4px solid var(--wood-dark);
+      aspect-ratio: 4 / 3;
+      max-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 3px var(--wood-light);
+    }
+    .timelapse-stage img {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      display: block;
+    }
+    .timelapse-meta {
+      margin-top: 0.65rem;
+      font-size: 1.1rem;
+      color: var(--ink-soft);
+      word-break: break-all;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+      margin-top: 0.85rem;
+    }
+    label.inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    input[type="range"] { width: 140px; }
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: 3px solid var(--wood-dark);
+      padding: 0.4rem 1rem;
+      font-size: 1.2rem;
+      box-shadow: 3px 3px 0 var(--wood-dark);
+    }
+    button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--wood-dark); }
+    .btn-primary {
+      background: linear-gradient(180deg, var(--grass) 0%, var(--grass-dark) 100%);
+      color: #fffef8;
+    }
+    .btn-ghost {
+      background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood) 100%);
+      color: #fffef8;
+    }
+    .scrub-wrap { flex: 1 1 200px; min-width: 160px; }
+    .scrub-wrap input[type="range"] { width: 100%; }
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.65rem;
+      max-height: 48vh;
+      overflow-y: auto;
+      padding: 0.25rem;
+    }
+    .thumb {
+      display: block;
+      border: 3px solid var(--wood-dark);
+      background: #2a1810;
+      cursor: pointer;
+      padding: 0;
+      overflow: hidden;
+      aspect-ratio: 4/3;
+    }
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      vertical-align: top;
+    }
+    .thumb:focus { outline: 3px solid var(--grass); }
+    .thumb.selected { box-shadow: 0 0 0 3px var(--gold); }
+    .empty { color: var(--ink-soft); font-style: italic; margin: 0; }
+    .toast {
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.65rem;
+      border: 3px solid var(--wood-dark);
+      background: #f5e0de;
+    }
+    .toast[hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="farm-header">
+      <h1>Photo gallery</h1>
+    </header>
+    <nav class="site-nav" aria-label="Sections">
+      <a href="/">← Farm shed (live cam)</a>
+    </nav>
+
+    <div class="panel">
+      <h2>Timelapse</h2>
+      <p class="hint">Plays saved diary photos oldest → newest. Pause anytime or scrub the slider.</p>
+      <div class="timelapse-stage">
+        <img id="tlImg" alt="Timelapse frame" hidden />
+        <p id="tlEmpty" class="empty" style="color: #e5d4a8; padding: 1rem;">Loading photos…</p>
+      </div>
+      <p id="tlMeta" class="timelapse-meta"></p>
+      <div class="controls">
+        <button type="button" class="btn-primary" id="btnPlay">Play</button>
+        <button type="button" class="btn-ghost" id="btnPause">Pause</button>
+        <label class="inline">Frame <span id="spdLabel">0.5</span>s
+          <input type="range" id="tlSpeed" min="0.1" max="3" step="0.1" value="0.5" />
+        </label>
+        <div class="scrub-wrap">
+          <label class="inline" style="width:100%; flex-direction:column; align-items:stretch;">
+            <span>Position</span>
+            <input type="range" id="tlScrub" min="0" max="0" value="0" disabled />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>All photos</h2>
+      <p id="gridMeta" class="hint"></p>
+      <div id="photoGrid" class="photo-grid"></div>
+    </div>
+
+    <div id="errToast" class="toast" hidden></div>
+  </div>
+
+  <script>
+    const tlImg = document.getElementById("tlImg");
+    const tlEmpty = document.getElementById("tlEmpty");
+    const tlMeta = document.getElementById("tlMeta");
+    const tlSpeed = document.getElementById("tlSpeed");
+    const spdLabel = document.getElementById("spdLabel");
+    const tlScrub = document.getElementById("tlScrub");
+    const photoGrid = document.getElementById("photoGrid");
+    const gridMeta = document.getElementById("gridMeta");
+    const errToast = document.getElementById("errToast");
+
+    /** @type {{ name: string, mtime: number }[]} chronological */
+    let chrono = [];
+    let tlIndex = 0;
+    let playing = false;
+    let timer = null;
+
+    function photoUrl(name) {
+      return "/api/photo/" + encodeURIComponent(name);
+    }
+
+    function showFrame(i) {
+      if (!chrono.length) return;
+      tlIndex = Math.max(0, Math.min(chrono.length - 1, i));
+      const item = chrono[tlIndex];
+      tlImg.src = photoUrl(item.name);
+      tlImg.hidden = false;
+      tlEmpty.hidden = true;
+      tlMeta.textContent =
+        item.name + " · " + new Date(item.mtime * 1000).toLocaleString() + " · " + (tlIndex + 1) + " / " + chrono.length;
+      tlScrub.value = String(tlIndex);
+      document.querySelectorAll(".thumb").forEach((el, idx) => {
+        const chronoIdx = chrono.length - 1 - idx;
+        el.classList.toggle("selected", chronoIdx === tlIndex);
+      });
+    }
+
+    function stopTimer() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      playing = false;
+    }
+
+    function tick() {
+      if (!chrono.length) return;
+      if (tlIndex >= chrono.length - 1) {
+        stopTimer();
+        return;
+      }
+      showFrame(tlIndex + 1);
+    }
+
+    function play() {
+      if (!chrono.length) return;
+      stopTimer();
+      playing = true;
+      const ms = Math.max(100, (parseFloat(tlSpeed.value) || 0.5) * 1000);
+      timer = setInterval(tick, ms);
+    }
+
+    document.getElementById("btnPlay").addEventListener("click", () => {
+      if (chrono.length && tlIndex >= chrono.length - 1) showFrame(0);
+      play();
+    });
+    document.getElementById("btnPause").addEventListener("click", stopTimer);
+
+    tlSpeed.addEventListener("input", () => {
+      spdLabel.textContent = tlSpeed.value;
+      if (playing) play();
+    });
+
+    tlScrub.addEventListener("input", () => {
+      stopTimer();
+      showFrame(parseInt(tlScrub.value, 10));
+    });
+
+    tlImg.addEventListener("error", () => {
+      errToast.hidden = false;
+      errToast.textContent = "Could not load image (missing file or server error).";
+    });
+
+    async function loadPhotos() {
+      errToast.hidden = true;
+      try {
+        const r = await fetch("/api/photos");
+        const j = await r.json();
+        const items = j.items || [];
+        gridMeta.textContent =
+          j.photos_dir ? j.count + " images in " + j.photos_dir : "No folder configured.";
+        chrono = [...items].sort((a, b) => a.mtime - b.mtime);
+        tlScrub.max = String(Math.max(0, chrono.length - 1));
+        tlScrub.disabled = chrono.length === 0;
+        photoGrid.innerHTML = "";
+        if (!chrono.length) {
+          tlEmpty.hidden = false;
+          tlEmpty.textContent = "No photos yet — take a snapshot from the farm shed.";
+          tlImg.hidden = true;
+          tlMeta.textContent = "";
+          return;
+        }
+        [...chrono].reverse().forEach((item, revIdx) => {
+          const i = chrono.length - 1 - revIdx;
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "thumb";
+          b.title = item.name;
+          const img = document.createElement("img");
+          img.src = photoUrl(item.name);
+          img.alt = item.name;
+          img.loading = "lazy";
+          b.appendChild(img);
+          b.addEventListener("click", () => {
+            stopTimer();
+            showFrame(i);
+          });
+          photoGrid.appendChild(b);
+        });
+        showFrame(chrono.length - 1);
+      } catch (e) {
+        errToast.hidden = false;
+        errToast.textContent = String(e);
+        tlEmpty.textContent = "Could not load photo list.";
+      }
+    }
+
+    loadPhotos();
+  </script>
+</body>
+</html>

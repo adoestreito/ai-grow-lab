@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Install:
+ 1. Copy this file to ~/Library/LaunchAgents/com.blindinglights.diary-photo.plist
+    2. Edit ProgramArguments: set ESP32_CAM_URL to your ESP32 IP (see Serial Monitor after boot).
+    3. chmod +x /path/to/fetch-diary-photo.sh
+    4. launchctl load ~/Library/LaunchAgents/com.blindinglights.diary-photo.plist
+
+  Unload: launchctl unload ~/Library/LaunchAgents/com.blindinglights.diary-photo.plist
+
+  Runs every 12 hours (43200 seconds). For fixed wall-clock times twice daily, replace
+  StartInterval with two StartCalendarInterval dictionaries (see man launchd.plist).
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.blindinglights.diary-photo</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>bash</string>
+    <string>-c</string>
+    <string>ESP32_CAM_URL="http://192.168.1.100" /path/to/ai-grow-lab/scripts/fetch-diary-photo.sh</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>43200</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/blindinglights-diary-photo.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/blindinglights-diary-photo.err</string>
+</dict>
+</plist>

@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diary Cam — Farm Cam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #3d2914;
+      --ink-soft: #5c4330;
+      --parchment: #f4e4bc;
+      --parchment-dark: #e5d4a8;
+      --wood: #8b5a3c;
+      --wood-dark: #5c3d2e;
+      --wood-light: #c49a6c;
+      --sky-top: #9fd3e8;
+      --sky-mid: #c8e8f5;
+      --grass: #7cb342;
+      --grass-dark: #558b2f;
+      --gold: #d4a017;
+      --gold-light: #f0d060;
+      --danger: #b94a48;
+      --success: #6a9e3a;
+      --pixel-shadow: 2px 2px 0 rgba(61, 41, 20, 0.35);
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "VT323", ui-monospace, monospace;
+      font-size: 1.35rem;
+      color: var(--ink);
+      line-height: 1.35;
+      background:
+        linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 42%, #e8f2d8 72%, #a8c978 100%);
+      background-attachment: fixed;
+      overflow-x: clip;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 3px,
+          rgba(255, 255, 255, 0.03) 3px,
+          rgba(255, 255, 255, 0.03) 4px
+        );
+      z-index: 0;
+    }
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 2.5rem;
+      box-sizing: border-box;
+    }
+    .farm-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      text-shadow: 1px 1px 0 var(--parchment-dark), 2px 2px 0 rgba(61, 41, 20, 0.2);
+    }
+    .farm-header h1 {
+      font-size: 2.75rem;
+      font-weight: 400;
+      margin: 0;
+      color: var(--wood-dark);
+      letter-spacing: 0.02em;
+    }
+    .farm-header .tag {
+      display: inline-block;
+      margin-top: 0.35rem;
+      padding: 0.15rem 0.75rem;
+      background: var(--parchment);
+      border: 3px solid var(--wood-dark);
+      box-shadow: var(--pixel-shadow), inset 0 2px 0 var(--gold-light);
+      color: var(--ink-soft);
+      font-size: 1.15rem;
+    }
+    .sub {
+      color: var(--ink-soft);
+      font-size: 1.2rem;
+      margin: 0.75rem auto 0;
+      max-width: 36ch;
+    }
+    .grid {
+      display: grid;
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 100%;
+    }
+    .grid > * {
+      min-width: 0;
+    }
+    @media (min-width: 820px) {
+      .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 340px); align-items: start; }
+    }
+    .left-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .panel {
+      min-width: 0;
+      max-width: 100%;
+      background: linear-gradient(145deg, var(--parchment) 0%, var(--parchment-dark) 100%);
+      border: 4px solid var(--wood-dark);
+      padding: 1rem 1.1rem 1.15rem;
+      box-shadow:
+        4px 4px 0 var(--wood-dark),
+        inset 0 1px 0 rgba(255, 250, 235, 0.8),
+        inset 0 -2px 0 rgba(92, 61, 46, 0.12);
+    }
+    .panel h2 {
+      font-size: 1.35rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      text-shadow: 1px 1px 0 var(--wood-dark);
+      margin: 0 0 0.85rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 3px dashed rgba(92, 61, 46, 0.35);
+    }
+    .stream-wrap {
+      position: relative;
+      background: #2a1810;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      border: 4px solid var(--wood-dark);
+      box-shadow:
+        inset 0 0 0 3px var(--wood-light),
+        3px 3px 0 rgba(61, 41, 20, 0.4);
+    }
+    .stream-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      vertical-align: top;
+    }
+    .stream-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(42, 24, 16, 0.82);
+      color: var(--parchment);
+      font-size: 1.2rem;
+      padding: 1rem;
+      text-align: center;
+      text-shadow: 1px 1px 0 var(--wood-dark);
+    }
+    .stream-overlay[hidden] { display: none; }
+    label {
+      display: block;
+      font-size: 1.1rem;
+      color: var(--ink-soft);
+      margin-bottom: 0.3rem;
+    }
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 0.45rem 0.55rem;
+      border: 3px solid var(--wood-dark);
+      background: rgba(255, 252, 240, 0.92);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      box-shadow: inset 2px 2px 0 rgba(92, 61, 46, 0.15);
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--grass-dark);
+      box-shadow: inset 2px 2px 0 rgba(92, 61, 46, 0.15), 0 0 0 2px var(--grass);
+    }
+    .row {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .row label {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    input[type="checkbox"] {
+      appearance: none;
+      width: 1.15rem;
+      height: 1.15rem;
+      border: 3px solid var(--wood-dark);
+      background: rgba(255, 252, 240, 0.95);
+      box-shadow: inset 1px 1px 0 rgba(92, 61, 46, 0.2);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    input[type="checkbox"]:checked {
+      background: var(--grass) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath fill='none' stroke='%233d2914' stroke-width='2' d='M1 5l3 3 7-7'/%3E%3C/svg%3E") center / 70% no-repeat;
+    }
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: 3px solid var(--wood-dark);
+      padding: 0.4rem 1rem;
+      font-size: 1.2rem;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.35);
+      box-shadow: 3px 3px 0 var(--wood-dark);
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+    }
+    button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--wood-dark);
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, var(--grass) 0%, var(--grass-dark) 100%);
+      color: #fffef8;
+    }
+    .btn-primary:hover {
+      filter: brightness(1.08);
+    }
+    .btn-ghost {
+      background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood) 100%);
+      color: #fffef8;
+    }
+    .btn-ghost:hover {
+      filter: brightness(1.05);
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.85rem; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 1.1rem;
+      padding: 0.2rem 0.65rem;
+      margin-bottom: 0.85rem;
+      background: rgba(255, 252, 240, 0.75);
+      border: 3px solid var(--wood-dark);
+      box-shadow: var(--pixel-shadow);
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      background: var(--wood-light);
+      border: 2px solid var(--wood-dark);
+      box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.4);
+    }
+    .dot.ok { background: var(--success); }
+    .dot.bad { background: var(--danger); }
+    .toast {
+      margin-top: 0.75rem;
+      font-size: 1.05rem;
+      padding: 0.5rem 0.65rem;
+      background: rgba(255, 252, 240, 0.9);
+      border: 3px solid var(--wood-dark);
+      word-break: break-all;
+      box-shadow: var(--pixel-shadow);
+    }
+    .toast.err {
+      border-color: var(--danger);
+      background: #f5e0de;
+      color: var(--wood-dark);
+    }
+    .toast.ok {
+      border-color: var(--grass-dark);
+      background: #e8f2dc;
+      color: var(--ink);
+    }
+    .hint {
+      font-size: 1rem;
+      color: var(--ink-soft);
+      margin-top: 0.35rem;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+    .hint code {
+      font-family: inherit;
+      background: rgba(92, 61, 46, 0.12);
+      padding: 0.05rem 0.25rem;
+      border: 2px solid rgba(92, 61, 46, 0.25);
+    }
+    .schedule-anchor-row.dimmed {
+      opacity: 0.55;
+    }
+    input[type="time"] {
+      width: 100%;
+      padding: 0.45rem 0.55rem;
+      border: 3px solid var(--wood-dark);
+      background: rgba(255, 252, 240, 0.92);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      box-shadow: inset 2px 2px 0 rgba(92, 61, 46, 0.15);
+    }
+    input[type="time"]:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    select {
+      width: 100%;
+      padding: 0.45rem 0.55rem;
+      border: 3px solid var(--wood-dark);
+      background: rgba(255, 252, 240, 0.92);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      box-shadow: inset 2px 2px 0 rgba(92, 61, 46, 0.15);
+    }
+    .options-section-title {
+      font-size: 1.25rem;
+      color: var(--gold);
+      text-shadow: 1px 1px 0 var(--wood-dark);
+      margin: 1rem 0 0.5rem;
+      padding-top: 0.75rem;
+      border-top: 3px dashed rgba(92, 61, 46, 0.35);
+      font-weight: 400;
+    }
+    .journal-meta {
+      font-size: 1rem;
+      color: var(--ink-soft);
+      margin: 0 0 0.5rem;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .journal-actions {
+      margin-bottom: 0.5rem;
+    }
+    .journal-body {
+      margin-top: 0.5rem;
+      max-width: 100%;
+      max-height: min(50vh, 420px);
+      overflow-x: auto;
+      overflow-y: auto;
+      padding: 0.65rem 0.85rem;
+      background: rgba(255, 252, 240, 0.88);
+      border: 3px solid var(--wood-dark);
+      font-size: 1.08rem;
+      line-height: 1.45;
+      box-shadow: inset 2px 2px 0 rgba(92, 61, 46, 0.08);
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }
+    .journal-body :is(h1, h2, h3) {
+      color: var(--wood-dark);
+      margin: 0.65rem 0 0.35rem;
+      text-shadow: none;
+      letter-spacing: 0;
+      border: none;
+      padding: 0;
+      text-transform: none;
+    }
+    .journal-body h1 { font-size: 1.35rem; }
+    .journal-body h2 { font-size: 1.2rem; color: var(--grass-dark); }
+    .journal-body ul, .journal-body ol { margin: 0.35rem 0 0.5rem 1.25rem; }
+    .journal-body p { margin: 0.4rem 0; }
+    .journal-body pre {
+      max-width: 100%;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 0.5rem;
+      background: rgba(92, 61, 46, 0.08);
+      border: 2px solid rgba(92, 61, 46, 0.2);
+    }
+    .journal-body pre code {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: transparent;
+      padding: 0;
+      border: none;
+    }
+    .journal-body table {
+      display: block;
+      width: max-content;
+      max-width: 100%;
+      overflow-x: auto;
+      border-collapse: collapse;
+    }
+    .journal-body img,
+    .journal-body video {
+      max-width: 100%;
+      height: auto;
+    }
+    .journal-body hr {
+      border: none;
+      border-top: 2px dashed rgba(92, 61, 46, 0.3);
+      margin: 0.75rem 0;
+    }
+    .journal-body :not(pre) > code {
+      background: rgba(92, 61, 46, 0.1);
+      padding: 0.05rem 0.2rem;
+      word-break: break-word;
+    }
+    .journal-empty {
+      color: var(--ink-soft);
+      font-style: italic;
+      margin: 0;
+    }
+    .site-nav {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+    .site-nav a {
+      display: inline-block;
+      padding: 0.35rem 1rem;
+      background: var(--parchment);
+      border: 3px solid var(--wood-dark);
+      box-shadow: var(--pixel-shadow);
+      color: var(--wood-dark);
+      text-decoration: none;
+      font-size: 1.2rem;
+    }
+    .site-nav a:hover { filter: brightness(1.06); }
+    .chat-log {
+      max-height: min(40vh, 320px);
+      overflow-y: auto;
+      padding: 0.65rem 0.75rem;
+      background: rgba(255, 252, 240, 0.65);
+      border: 3px solid var(--wood-dark);
+      margin-bottom: 0.75rem;
+      box-shadow: inset 2px 2px 0 rgba(92, 61, 46, 0.12);
+    }
+    .chat-msg {
+      margin-bottom: 0.65rem;
+      padding: 0.45rem 0.55rem;
+      border-left: 4px solid var(--wood-light);
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .chat-msg.user { border-left-color: var(--grass-dark); }
+    .chat-msg .who {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      text-shadow: 1px 1px 0 var(--wood-dark);
+      margin-bottom: 0.25rem;
+    }
+    .chat-msg .bubble {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 1.05rem;
+    }
+    textarea.chat-input {
+      width: 100%;
+      min-height: 4.5rem;
+      padding: 0.45rem 0.55rem;
+      border: 3px solid var(--wood-dark);
+      background: rgba(255, 252, 240, 0.92);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1.1rem;
+      margin-bottom: 0.65rem;
+      resize: vertical;
+      box-shadow: inset 2px 2px 0 rgba(92, 61, 46, 0.15);
+    }
+    textarea.chat-input:focus {
+      outline: none;
+      border-color: var(--grass-dark);
+    }
+    #chatToast[hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="farm-header">
+      <h1>Diary Cam</h1>
+      <span class="tag">Farm observation shed</span>
+      <p class="sub">Live view &amp; snapshots from your greenhouse cam. Photos tuck into your Diary folder.</p>
+    </header>
+
+    <nav class="site-nav" aria-label="Sections">
+      <a href="/gallery.html">Photo gallery &amp; timelapse</a>
+    </nav>
+
+    <div class="grid">
+      <div class="left-stack">
+        <div class="panel">
+          <h2>Live stream</h2>
+          <div id="camStatus" class="status-pill"><span class="dot" id="healthDot"></span><span id="healthText">Checking camera…</span></div>
+          <div class="stream-wrap">
+            <img id="streamImg" alt="Live stream" />
+            <div id="streamFallback" class="stream-overlay" hidden>No signal from the cam… check the URL &amp; Wi‑Fi.</div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn-primary" id="btnSnap">Take snapshot</button>
+            <button type="button" class="btn-ghost" id="btnReloadStream">Refresh stream</button>
+          </div>
+          <div id="toast"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Latest journal</h2>
+          <p id="journalMeta" class="journal-meta"></p>
+          <div class="journal-actions">
+            <button type="button" class="btn-ghost" id="btnJournalRefresh">Refresh journal</button>
+          </div>
+          <article id="journalBody" class="journal-body"><p class="journal-empty">Loading…</p></article>
+        </div>
+
+        <div class="panel">
+          <h2>Chat with the gardener</h2>
+          <p class="hint">
+            Uses the same AI model and URL as in Options. Each reply is grounded with your <strong>latest saved</strong> photo from the Diary folder (by file date). Take a snapshot first if the folder is empty.
+          </p>
+          <p id="chatContextMeta" class="hint" style="margin-top: 0"></p>
+          <div id="chatLog" class="chat-log" aria-live="polite"></div>
+          <textarea id="chatInput" class="chat-input" placeholder="Ask about nutrients, lighting, pods, algae…" rows="4"></textarea>
+          <div class="actions">
+            <button type="button" class="btn-primary" id="btnChatSend">Send</button>
+            <button type="button" class="btn-ghost" id="btnChatClear">Clear chat</button>
+          </div>
+          <div id="chatToast" class="toast err" hidden></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Options</h2>
+        <form id="form">
+          <label for="cameraUrl">Camera base URL</label>
+          <input type="text" id="cameraUrl" name="cameraUrl" placeholder="http://192.168.1.100" autocomplete="off" />
+          <p class="hint" id="streamHint">Live MJPEG uses port <code>:81</code> on the camera (see Espressif firmware).</p>
+          <div class="row">
+            <label><input type="checkbox" id="streamViaServer" /> Proxy live stream through this Mac (Tailscale / off-LAN)</label>
+          </div>
+          <p class="hint">Turn <strong>on</strong> when you open Diary from another network: the browser only talks to this computer; the Mac pulls video from the camera on your home Wi‑Fi. Leave <strong>off</strong> on the same LAN for a slightly lighter path.</p>
+
+          <label for="photosDir">Save folder</label>
+          <input type="text" id="photosDir" name="photosDir" placeholder="…/BlindingLights/Diary/Photos" autocomplete="off" />
+
+          <label for="journalDir">Journal folder (AI reports)</label>
+          <input type="text" id="journalDir" name="journalDir" placeholder="…/BlindingLights/Diary/Journal" autocomplete="off" />
+
+          <label for="intervalHours">Hours between automatic photos</label>
+          <input type="number" id="intervalHours" name="intervalHours" min="0" max="336" step="0.25" />
+
+          <div id="scheduleAnchorRow" class="schedule-anchor-row">
+            <label for="scheduleStart">First daily shot (local time)</label>
+            <input type="time" id="scheduleStart" name="scheduleStart" step="60" />
+            <p class="hint" id="scheduleAnchorHint" hidden>
+              Start time only applies when the interval divides evenly into 24h (e.g. 1h, 2h, 3h, 4h, 6h, 8h, 12h). Otherwise the timer runs from the last snapshot.
+            </p>
+          </div>
+
+          <div class="row">
+            <label><input type="checkbox" id="schedulerOn" /> Enable automatic photos</label>
+          </div>
+
+          <p class="options-section-title">Garden AI report</p>
+          <div class="row">
+            <label><input type="checkbox" id="aiAnalysisOn" /> After each photo, ask the AI gardener for a report</label>
+          </div>
+          <label for="aiBackend">Vision backend</label>
+          <select id="aiBackend" name="aiBackend">
+            <option value="ollama">Ollama</option>
+            <option value="lmstudio">LM Studio (OpenAI API)</option>
+          </select>
+          <label for="aiBaseUrl">API base URL</label>
+          <input type="text" id="aiBaseUrl" name="aiBaseUrl" placeholder="http://127.0.0.1:11434" autocomplete="off" />
+          <p class="hint">Ollama: <code>http://127.0.0.1:11434</code> — LM Studio: <code>http://127.0.0.1:1234/v1</code></p>
+          <label for="aiModel">Model name</label>
+          <input type="text" id="aiModel" name="aiModel" placeholder="gemma4:e2b" autocomplete="off" />
+          <p class="hint">Reports save under Journal as <code>diary_…_garden_report.md</code> (or <code>_garden_report_error.txt</code> if the model fails). The latest one appears in <strong>Latest journal</strong>.</p>
+
+          <button type="submit" class="btn-primary" style="width:100%">Save options</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const streamImg = document.getElementById("streamImg");
+    const streamFallback = document.getElementById("streamFallback");
+    const healthDot = document.getElementById("healthDot");
+    const healthText = document.getElementById("healthText");
+    const toast = document.getElementById("toast");
+    const form = document.getElementById("form");
+    let lastIntervalSeconds = 43200;
+    /** Direct MJPEG URL (host:81). Set from /api/settings. */
+    let streamBaseUrl = "";
+    /** When true, use same-origin /api/stream so remote (e.g. Tailscale) browsers need not reach camera LAN IP. */
+    let streamViaServer = false;
+
+    function updateStreamHint() {
+      const el = document.getElementById("streamHint");
+      if (streamViaServer) {
+        el.innerHTML =
+          "Stream uses <code>/api/stream</code> on this Diary server — fine over Tailscale. The Mac running Diary must stay on the same LAN as the camera.";
+      } else if (streamBaseUrl) {
+        el.innerHTML =
+          "Stream loads straight from <code>" +
+          streamBaseUrl +
+          "/stream</code> (browser must reach that IP — same Wi‑Fi usually). Enable <strong>Proxy live stream</strong> above for remote access.";
+      } else {
+        el.innerHTML = "Set camera URL and save. MJPEG is on port <code>:81</code>.";
+      }
+    }
+
+    function updateScheduleAnchorState(intervalSeconds) {
+      const ok = intervalSeconds > 0 && 86400 % intervalSeconds === 0;
+      const row = document.getElementById("scheduleAnchorRow");
+      const hint = document.getElementById("scheduleAnchorHint");
+      const input = document.getElementById("scheduleStart");
+      input.disabled = !ok;
+      row.classList.toggle("dimmed", !ok);
+      hint.hidden = ok;
+    }
+
+    function showToast(msg, kind) {
+      toast.className = "toast" + (kind ? " " + kind : "");
+      toast.textContent = msg;
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function formatReply(t) {
+      return escapeHtml(t).replace(/\n/g, "<br>");
+    }
+
+    const chatLog = document.getElementById("chatLog");
+    const chatInput = document.getElementById("chatInput");
+    const chatToast = document.getElementById("chatToast");
+    let chatMessages = [];
+
+    function showChatToast(msg, isErr) {
+      chatToast.hidden = false;
+      chatToast.className = "toast" + (isErr ? " err" : " ok");
+      chatToast.textContent = msg;
+    }
+
+    function renderChat() {
+      chatLog.innerHTML = "";
+      chatMessages.forEach((m) => {
+        const div = document.createElement("div");
+        div.className = "chat-msg " + (m.role === "user" ? "user" : "assistant");
+        const who = document.createElement("div");
+        who.className = "who";
+        who.textContent = m.role === "user" ? "You" : "Gardener";
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.innerHTML = formatReply(m.content);
+        div.appendChild(who);
+        div.appendChild(bubble);
+        chatLog.appendChild(div);
+      });
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    async function sendChat() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      chatInput.value = "";
+      chatToast.hidden = true;
+      chatMessages.push({ role: "user", content: text });
+      renderChat();
+      const thinking = document.createElement("div");
+      thinking.className = "chat-msg assistant";
+      thinking.innerHTML = '<div class="who">Gardener</div><div class="bubble">Thinking…</div>';
+      chatLog.appendChild(thinking);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      try {
+        const r = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: chatMessages }),
+        });
+        let data = {};
+        try {
+          data = await r.json();
+        } catch {
+          data = {};
+        }
+        chatLog.removeChild(thinking);
+        if (!r.ok) {
+          const d = data.detail;
+          chatMessages.pop();
+          renderChat();
+          showChatToast(typeof d === "string" ? d : JSON.stringify(d || data), true);
+          return;
+        }
+        chatMessages.push({ role: "assistant", content: data.reply || "" });
+        renderChat();
+        const meta = document.getElementById("chatContextMeta");
+        if (meta && data.context_photo) {
+          meta.textContent = "Latest snapshot sent to the model: " + data.context_photo;
+        }
+      } catch (e) {
+        if (thinking.parentNode === chatLog) chatLog.removeChild(thinking);
+        chatMessages.pop();
+        renderChat();
+        showChatToast(String(e), true);
+      }
+    }
+
+    document.getElementById("btnChatSend").addEventListener("click", sendChat);
+    document.getElementById("btnChatClear").addEventListener("click", () => {
+      chatMessages = [];
+      chatToast.hidden = true;
+      const meta = document.getElementById("chatContextMeta");
+      if (meta) meta.textContent = "";
+      renderChat();
+    });
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendChat();
+      }
+    });
+
+    async function refreshJournal() {
+      const el = document.getElementById("journalBody");
+      const meta = document.getElementById("journalMeta");
+      try {
+        const r = await fetch("/api/journal/latest");
+        const j = await r.json();
+        if (!j.found) {
+          meta.textContent = j.message || "No journal entry yet.";
+          el.innerHTML =
+            '<p class="journal-empty">' + escapeHtml(j.message || "Nothing to show.") + "</p>";
+          return;
+        }
+        const name = j.path.split(/[/\\]/).pop();
+        meta.textContent = name + " · " + new Date(j.modified * 1000).toLocaleString();
+        el.innerHTML = j.html;
+      } catch (e) {
+        meta.textContent = "Could not load journal.";
+        el.innerHTML = '<p class="journal-empty">' + escapeHtml(String(e)) + "</p>";
+      }
+    }
+
+    function pollJournalForNewReport() {
+      let n = 0;
+      const id = setInterval(() => {
+        refreshJournal();
+        if (++n >= 8) clearInterval(id);
+      }, 4000);
+    }
+
+    function attachStream() {
+      streamFallback.hidden = true;
+      streamImg.removeAttribute("src");
+      if (streamViaServer) {
+        streamImg.src = "/api/stream?t=" + Date.now();
+      } else if (streamBaseUrl) {
+        streamImg.src = streamBaseUrl + "/stream";
+      } else {
+        streamImg.src = "/api/stream?t=" + Date.now();
+      }
+    }
+
+    streamImg.addEventListener("error", () => {
+      streamFallback.hidden = false;
+    });
+
+    document.getElementById("btnReloadStream").addEventListener("click", attachStream);
+    document.getElementById("btnJournalRefresh").addEventListener("click", refreshJournal);
+
+    async function refreshHealth() {
+      try {
+        const r = await fetch("/api/health");
+        let j = {};
+        try {
+          j = await r.json();
+        } catch {
+          healthDot.className = "dot bad";
+          healthText.textContent = "Shed server acting up (try restarting it?)";
+          return;
+        }
+        healthDot.className = "dot " + (j.camera_reachable ? "ok" : "bad");
+        healthText.textContent = j.camera_reachable
+          ? "Camera reachable from this Mac"
+          : "Camera not reachable from this Mac (check IP / firewall)";
+      } catch {
+        healthDot.className = "dot bad";
+        healthText.textContent = "Server error";
+      }
+    }
+
+    async function loadSettings() {
+      const r = await fetch("/api/settings");
+      const s = await r.json();
+      document.getElementById("cameraUrl").value = s.camera_base_url;
+      streamBaseUrl = s.camera_stream_base || "";
+      streamViaServer = !!s.stream_via_server;
+      document.getElementById("streamViaServer").checked = streamViaServer;
+      updateStreamHint();
+      document.getElementById("photosDir").value = s.photos_dir;
+      document.getElementById("journalDir").value = s.journal_dir || "";
+      lastIntervalSeconds = s.interval_seconds > 0 ? s.interval_seconds : 43200;
+      document.getElementById("intervalHours").value = (lastIntervalSeconds / 3600).toFixed(2).replace(/\.?0+$/, "");
+      document.getElementById("schedulerOn").checked = s.scheduler_enabled;
+      const sh = Number.isFinite(s.schedule_start_hour) ? s.schedule_start_hour : 8;
+      const sm = Number.isFinite(s.schedule_start_minute) ? s.schedule_start_minute : 0;
+      document.getElementById("scheduleStart").value =
+        String(sh).padStart(2, "0") + ":" + String(sm).padStart(2, "0");
+      updateScheduleAnchorState(lastIntervalSeconds);
+      document.getElementById("aiAnalysisOn").checked = !!s.ai_analysis_enabled;
+      document.getElementById("aiBackend").value = s.ai_backend === "lmstudio" ? "lmstudio" : "ollama";
+      document.getElementById("aiBaseUrl").value = s.ai_base_url || "";
+      document.getElementById("aiModel").value = s.ai_model || "";
+    }
+
+    document.getElementById("intervalHours").addEventListener("input", () => {
+      const hours = parseFloat(document.getElementById("intervalHours").value, 10);
+      const sec =
+        Number.isFinite(hours) && hours > 0 ? Math.max(60, Math.round(hours * 3600)) : 0;
+      updateScheduleAnchorState(sec);
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const hours = parseFloat(document.getElementById("intervalHours").value, 10);
+      const schedulerOn = document.getElementById("schedulerOn").checked;
+      if (schedulerOn && (!Number.isFinite(hours) || hours <= 0)) {
+        showToast("Enter a positive interval (hours) for automatic photos.", "err");
+        return;
+      }
+      let interval_seconds = lastIntervalSeconds;
+      if (Number.isFinite(hours) && hours > 0) {
+        interval_seconds = Math.max(60, Math.round(hours * 3600));
+      }
+      const timeVal = document.getElementById("scheduleStart").value || "08:00";
+      const timeParts = timeVal.split(":");
+      const scheduleHour = parseInt(timeParts[0], 10);
+      const scheduleMin = parseInt(timeParts[1], 10);
+      const body = {
+        camera_base_url: document.getElementById("cameraUrl").value.trim(),
+        photos_dir: document.getElementById("photosDir").value.trim(),
+        journal_dir: document.getElementById("journalDir").value.trim(),
+        interval_seconds,
+        scheduler_enabled: schedulerOn,
+        schedule_start_hour: Number.isFinite(scheduleHour) ? scheduleHour : 8,
+        schedule_start_minute: Number.isFinite(scheduleMin) ? scheduleMin : 0,
+        ai_analysis_enabled: document.getElementById("aiAnalysisOn").checked,
+        ai_backend: document.getElementById("aiBackend").value,
+        ai_base_url: document.getElementById("aiBaseUrl").value.trim(),
+        ai_model: document.getElementById("aiModel").value.trim(),
+        stream_via_server: document.getElementById("streamViaServer").checked,
+      };
+      try {
+        const r = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          showToast(err.detail || r.statusText, "err");
+          return;
+        }
+        showToast("Options saved!", "ok");
+        const saved = await r.json();
+        if (saved.camera_stream_base) {
+          streamBaseUrl = saved.camera_stream_base;
+        }
+        streamViaServer = !!saved.stream_via_server;
+        document.getElementById("streamViaServer").checked = streamViaServer;
+        updateStreamHint();
+        lastIntervalSeconds = saved.interval_seconds > 0 ? saved.interval_seconds : lastIntervalSeconds;
+        if (Number.isFinite(saved.schedule_start_hour) && Number.isFinite(saved.schedule_start_minute)) {
+          document.getElementById("scheduleStart").value =
+            String(saved.schedule_start_hour).padStart(2, "0") +
+            ":" +
+            String(saved.schedule_start_minute).padStart(2, "0");
+        }
+        updateScheduleAnchorState(lastIntervalSeconds);
+        attachStream();
+        await refreshHealth();
+        await refreshJournal();
+      } catch (err) {
+        showToast(String(err), "err");
+      }
+    });
+
+    document.getElementById("btnSnap").addEventListener("click", async () => {
+      showToast("Saving…");
+      try {
+        const r = await fetch("/api/snapshot", { method: "POST" });
+        const text = await r.text();
+        let j = {};
+        try {
+          j = text ? JSON.parse(text) : {};
+        } catch {
+          showToast(text.slice(0, 200) || "Invalid response", "err");
+          return;
+        }
+        if (!r.ok) {
+          const d = j.detail;
+          showToast(typeof d === "string" ? d : JSON.stringify(d || j), "err");
+          return;
+        }
+        let msg = "Saved: " + j.path;
+        if (j.analysis_queued) {
+          msg += " · AI gardener is writing your report…";
+          pollJournalForNewReport();
+        }
+        showToast(msg, "ok");
+      } catch (err) {
+        showToast(String(err), "err");
+      }
+    });
+
+    loadSettings().then(() => {
+      attachStream();
+      refreshHealth();
+      refreshJournal();
+      setInterval(refreshHealth, 15000);
+    });
+  </script>
+</body>
+</html>
